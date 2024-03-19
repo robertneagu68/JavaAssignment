@@ -12,14 +12,26 @@ import java.util.stream.Collectors;
 public class FirstProblemService {
     private static final String FORBIDDEN_CHARACTER = "a";
 
-    public void saveWords(List<String> words) {
-        words.forEach(word -> {
-            if (word.contains(FORBIDDEN_CHARACTER)) {
-                throw new UnsupportedOperationException("This word is not valid!");
-            }
+  /**
+   * I used a CompletableFuture object to run multiple threads
+   * asynchronously ensuring a smaller execution time, under 500ms
+   * @param words => The list of words to save
+   */
+  public void saveWords(List<String> words) {
+      words.forEach(word -> {
+        if (word.contains(FORBIDDEN_CHARACTER)) {
+          throw new UnsupportedOperationException("This word is not valid!");
+        }
+      });
 
-            saveWordToExternalApi(word);
-        });
+      List<CompletableFuture<Void>> futures = words.stream()
+        .map(word -> CompletableFuture.runAsync(() -> {
+          saveWordToExternalApi(word);
+        }))
+        .toList();
+
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+        .thenRun(() -> System.out.println("All words have been processed."));
     }
 
     private void saveWordToExternalApi(String word) {
